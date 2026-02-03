@@ -16,6 +16,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('spendings', App\Http\Controllers\SpendingController::class);
     Route::resource('merchants', App\Http\Controllers\MerchantController::class);
     Route::resource('cash-flows', App\Http\Controllers\CashFlowController::class);
+    Route::resource('assets', App\Http\Controllers\AssetController::class);
 
     // Sidebar Routes
     Route::resource('transactions', App\Http\Controllers\TransactionController::class);

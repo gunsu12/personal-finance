@@ -15,6 +15,51 @@
             @if(session('success'))
                 <div class="alert alert-success">{{ session('success') }}</div>
             @endif
+
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <h5>Overview for {{ now()->format('F Y') }}</h5>
+                </div>
+                <div class="col-md-4">
+                    <div class="info-box bg-info">
+                        <span class="info-box-icon"><i class="fas fa-money-bill-wave"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Total Budget</span>
+                            <span class="info-box-number">{{ number_format($currentMonthBudget, 2) }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="info-box bg-danger">
+                        <span class="info-box-icon"><i class="fas fa-shopping-cart"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Total Spending</span>
+                            <span class="info-box-number">{{ number_format($currentMonthSpending, 2) }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                     @php
+                        $percentage = $currentMonthBudget > 0 ? ($currentMonthSpending / $currentMonthBudget) * 100 : 0;
+                        $remaining = $currentMonthBudget - $currentMonthSpending;
+                        $statusColor = $remaining >= 0 ? 'success' : 'danger';
+                    @endphp
+                    <div class="info-box bg-{{ $statusColor }}">
+                        <span class="info-box-icon"><i class="fas fa-wallet"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Remaining Budget</span>
+                            <span class="info-box-number">{{ number_format($remaining, 2) }}</span>
+                            <div class="progress">
+                                <div class="progress-bar" style="width: {{ min($percentage, 100) }}%"></div>
+                            </div>
+                            <span class="progress-description">
+                                {{ number_format($percentage, 1) }}% Used
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="table-responsive">
                 <table class="table table-bordered table-striped">
                     <thead>

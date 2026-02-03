@@ -342,6 +342,11 @@ return [
             'icon' => 'fas fa-fw fa-exchange-alt',
         ],
         [
+            'text' => 'Assets',
+            'url'  => 'assets',
+            'icon' => 'fas fa-fw fa-coins',
+        ],
+        [
             'text'    => 'Reports',
             'icon'    => 'fas fa-fw fa-chart-line',
             'submenu' => [

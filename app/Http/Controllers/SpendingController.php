@@ -12,7 +12,18 @@ class SpendingController extends Controller
     public function index()
     {
         $spendings = \App\Models\Spending::with(['budgetItem', 'budgetItem.budget', 'merchant'])->latest('spending_date')->get();
-        return view('spendings.index', compact('spendings'));
+
+        // Calculate Totals for Current Month
+        $currentMonthBudget = \App\Models\Budget::where('user_id', auth()->id())
+            ->where('year', now()->year)
+            ->where('month_periode', now()->month)
+            ->sum('total_budget');
+
+        $currentMonthSpending = \App\Models\Spending::whereMonth('spending_date', now()->month)
+            ->whereYear('spending_date', now()->year)
+            ->sum('amount');
+
+        return view('spendings.index', compact('spendings', 'currentMonthBudget', 'currentMonthSpending'));
     }
 
     /**
@@ -55,9 +66,25 @@ class SpendingController extends Controller
             'transaction_methods' => 'required|in:cash,credit_card,debit_card,transfer,ewallet,qris',
         ]);
 
-        \App\Models\Spending::create($request->all());
+        try {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($request) {
+                $spending = \App\Models\Spending::create($request->all());
 
-        return redirect()->route('spendings.index')->with('success', 'Spending recorded successfully');
+                // Automatically create (catat) in cashflow
+                \App\Models\CashFlow::create([
+                    'user_id' => auth()->id(),
+                    'type' => 'credit',
+                    'group' => 'spending',
+                    'amount' => $spending->amount,
+                    'transaction_notes' => $spending->notes ? 'Spending: ' . $spending->notes : 'Spending',
+                    'transaction_refference' => $spending->code,
+                ]);
+            });
+
+            return redirect()->route('spendings.index')->with('success', 'Spending recorded successfully');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to record spending: ' . $e->getMessage())->withInput();
+        }
     }
 
     /**
@@ -94,9 +121,36 @@ class SpendingController extends Controller
             'transaction_methods' => 'required|in:cash,credit_card,debit_card,transfer,ewallet,qris',
         ]);
 
-        $spending->update($request->all());
+        try {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($request, $spending) {
+                // 1. Reversal (Debit) of OLD amount BEFORE update
+                \App\Models\CashFlow::create([
+                    'user_id' => auth()->id(),
+                    'type' => 'debit', // Reversal = Money Back
+                    'group' => 'spending',
+                    'amount' => $spending->amount,
+                    'transaction_notes' => 'Correction for ' . $spending->code,
+                    'transaction_refference' => $spending->code,
+                ]);
 
-        return redirect()->route('spendings.index')->with('success', 'Spending updated successfully');
+                // 2. Update Spending
+                $spending->update($request->all());
+
+                // 3. New Entry (Credit) of NEW amount
+                \App\Models\CashFlow::create([
+                    'user_id' => auth()->id(),
+                    'type' => 'credit', // New Spending
+                    'group' => 'spending',
+                    'amount' => $spending->amount,
+                    'transaction_notes' => $spending->notes ? 'Spending (Updated): ' . $spending->notes : 'Spending (Updated)',
+                    'transaction_refference' => $spending->code,
+                ]);
+            });
+
+            return redirect()->route('spendings.index')->with('success', 'Spending updated successfully');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to update spending: ' . $e->getMessage())->withInput();
+        }
     }
 
     /**

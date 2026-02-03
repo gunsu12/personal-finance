@@ -9,12 +9,27 @@ class CashFlowController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $cashFlows = \App\Models\CashFlow::where('user_id', auth()->id())
-            ->latest()
-            ->paginate(10);
-        return view('cash-flows.index', compact('cashFlows'));
+        $query = \App\Models\CashFlow::where('user_id', auth()->id());
+
+        if ($request->start_date) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+
+        if ($request->end_date) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+
+        // Calculate Totals
+        $statsQuery = clone $query;
+        $totalDebit = (clone $statsQuery)->where('type', 'debit')->sum('amount');
+        $totalCredit = (clone $statsQuery)->where('type', 'credit')->sum('amount');
+        $balance = $totalDebit - $totalCredit;
+
+        $cashFlows = $query->latest()->paginate(10)->appends($request->query());
+
+        return view('cash-flows.index', compact('cashFlows', 'totalDebit', 'totalCredit', 'balance'));
     }
 
     /**

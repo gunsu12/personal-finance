@@ -15,6 +15,60 @@
             @if(session('success'))
                 <div class="alert alert-success">{{ session('success') }}</div>
             @endif
+
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <div class="info-box bg-success">
+                        <span class="info-box-icon"><i class="fas fa-arrow-down"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Total Income (Debit)</span>
+                            <span class="info-box-number">{{ number_format($totalDebit, 2) }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="info-box bg-danger">
+                        <span class="info-box-icon"><i class="fas fa-arrow-up"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Total Expense (Credit)</span>
+                            <span class="info-box-number">{{ number_format($totalCredit, 2) }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="info-box bg-{{ $balance >= 0 ? 'primary' : 'warning' }}">
+                        <span class="info-box-icon"><i class="fas fa-wallet"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Net Balance (Saldo)</span>
+                            <span class="info-box-number">{{ number_format($balance, 2) }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <form action="{{ route('cash-flows.index') }}" method="GET" class="mb-3">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Start Date</label>
+                            <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>End Date</label>
+                            <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
+                        </div>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Filter</button>
+                            <a href="{{ route('cash-flows.index') }}" class="btn btn-secondary ml-2">Reset</a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
             <div class="table-responsive">
                 <table class="table table-bordered table-striped">
                     <thead>
