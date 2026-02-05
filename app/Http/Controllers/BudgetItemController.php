@@ -22,7 +22,9 @@ class BudgetItemController extends Controller
             'qty' => 'required|integer|min:1',
         ]);
 
-        $budget->budgetItems()->create($request->all());
+        $budget->budgetItems()->firstOrCreate(
+            $request->only(['description', 'type', 'amount', 'qty'])
+        );
 
         return redirect()->route('budgets.show', $budget->id)->with('success', 'Item added successfully');
     }

@@ -14,6 +14,10 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
+                            <label>Date</label>
+                            <input type="datetime-local" name="date" class="form-control" value="{{ now()->format('Y-m-d\TH:i') }}" required>
+                        </div>
+                        <div class="form-group">
                             <label>Type</label>
                             <select name="type" class="form-control" required>
                                 <option value="debit">Debit (Income)</option>

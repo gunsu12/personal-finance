@@ -37,7 +37,7 @@ class SpendingController extends Controller
             ->orderBy('year', 'desc')
             ->orderBy('month_periode', 'desc')
             ->get();
-            
+
         // Attempt to find a default budget item from the current month's budget
         $currentDate = now();
         $currentBudget = $budgets->first(function ($budget) use ($currentDate) {
@@ -64,7 +64,21 @@ class SpendingController extends Controller
             'amount' => 'required|numeric|min:0',
             'merchant_id' => 'nullable|exists:merchants,id',
             'transaction_methods' => 'required|in:cash,credit_card,debit_card,transfer,ewallet,qris',
+            'budget_item_id' => 'nullable|exists:budget_items,id',
         ]);
+
+        // Validation: Check if budget is for the correct month/year
+        if ($request->budget_item_id) {
+            $budgetItem = \App\Models\BudgetItem::with('budget')->find($request->budget_item_id);
+            $spendingDate = \Carbon\Carbon::parse($request->spending_date);
+
+            if ($budgetItem && $budgetItem->budget) {
+                if ((int) $budgetItem->budget->month_periode !== (int) $spendingDate->month ||
+                    (int) $budgetItem->budget->year !== (int) $spendingDate->year) {
+                    return back()->with('error', 'The selected budget item does not belong to the spending date period ('.$spendingDate->format('M Y').').')->withInput();
+                }
+            }
+        }
 
         try {
             \Illuminate\Support\Facades\DB::transaction(function () use ($request) {
@@ -76,14 +90,14 @@ class SpendingController extends Controller
                     'type' => 'credit',
                     'group' => 'spending',
                     'amount' => $spending->amount,
-                    'transaction_notes' => $spending->notes ? 'Spending: ' . $spending->notes : 'Spending',
+                    'transaction_notes' => $spending->notes ? 'Spending: '.$spending->notes : 'Spending',
                     'transaction_refference' => $spending->code,
                 ]);
             });
 
-            return redirect()->route('spendings.index')->with('success', 'Spending recorded successfully');
+            return redirect()->route('spendings.create')->with('success', 'Spending recorded successfully');
         } catch (\Exception $e) {
-            return back()->with('error', 'Failed to record spending: ' . $e->getMessage())->withInput();
+            return back()->with('error', 'Failed to record spending: '.$e->getMessage())->withInput();
         }
     }
 
@@ -93,6 +107,7 @@ class SpendingController extends Controller
     public function show(string $id)
     {
         $spending = \App\Models\Spending::findOrFail($id);
+
         return view('spendings.show', compact('spending'));
     }
 
@@ -104,6 +119,7 @@ class SpendingController extends Controller
         $spending = \App\Models\Spending::findOrFail($id);
         $budgets = \App\Models\Budget::where('user_id', auth()->id())->with('budgetItems')->latest()->get();
         $merchants = \App\Models\Merchant::where('user_id', auth()->id())->orderBy('name')->get();
+
         return view('spendings.edit', compact('spending', 'budgets', 'merchants'));
     }
 
@@ -129,7 +145,7 @@ class SpendingController extends Controller
                     'type' => 'debit', // Reversal = Money Back
                     'group' => 'spending',
                     'amount' => $spending->amount,
-                    'transaction_notes' => 'Correction for ' . $spending->code,
+                    'transaction_notes' => 'Correction for '.$spending->code,
                     'transaction_refference' => $spending->code,
                 ]);
 
@@ -142,14 +158,14 @@ class SpendingController extends Controller
                     'type' => 'credit', // New Spending
                     'group' => 'spending',
                     'amount' => $spending->amount,
-                    'transaction_notes' => $spending->notes ? 'Spending (Updated): ' . $spending->notes : 'Spending (Updated)',
+                    'transaction_notes' => $spending->notes ? 'Spending (Updated): '.$spending->notes : 'Spending (Updated)',
                     'transaction_refference' => $spending->code,
                 ]);
             });
 
             return redirect()->route('spendings.index')->with('success', 'Spending updated successfully');
         } catch (\Exception $e) {
-            return back()->with('error', 'Failed to update spending: ' . $e->getMessage())->withInput();
+            return back()->with('error', 'Failed to update spending: '.$e->getMessage())->withInput();
         }
     }
 

@@ -13,16 +13,37 @@
         </div>
         <div class="card-body">
             <div class="row">
-                <div class="col-md-6">
-                    <p><strong>Total Budget:</strong> {{ number_format($budget->total_budget, 2) }}</p>
-                    <p><strong>Spent:</strong> {{ number_format($budget->total_already_spended, 2) }}</p>
+                <div class="col-lg-6 col-6">
+                    <div class="small-box bg-info">
+                        <div class="inner">
+                            <h3>{{ number_format($budget->total_budget, 0, ',', '.') }}</h3>
+                            <p>Total Budget</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-wallet"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-6">
+                    <div class="small-box bg-danger">
+                        <div class="inner">
+                            <h3>{{ number_format($budget->total_already_spended, 0, ',', '.') }}</h3>
+                            <p>Total Spent</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
             
             <hr>
-            <h4>Items</h4>
-            <hr>
-            <h4>Budget Items</h4>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h4>Budget Items</h4>
+                <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addItemModal">
+                    <i class="fas fa-plus"></i> Add New Item
+                </button>
+            </div>
             
             @if(session('success'))
                 <div class="alert alert-success">{{ session('success') }}</div>
@@ -67,48 +88,76 @@
                 </table>
             </div>
 
-            <hr>
-            <h5>Add New Item</h5>
-            <form action="{{ route('budgets.items.store', $budget->id) }}" method="POST">
-                @csrf
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label>Description</label>
-                            <input type="text" name="description" class="form-control" placeholder="e.g. Groceries" required>
+
+
+            <!-- Modal -->
+            <div class="modal fade" id="addItemModal" tabindex="-1" role="dialog" aria-labelledby="addItemModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="addItemModalLabel">Add New Budget Item</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
                         </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="form-group">
-                            <label>Type</label>
-                            <select name="type" class="form-control" required>
-                                <option value="konsumsi">Konsumsi</option>
-                                <option value="sewa">Sewa</option>
-                                <option value="pakaian">Pakaian</option>
-                                <option value="utilitas">Utilitas</option>
-                                <option value="hiburan">Hiburan</option>
-                                <option value="lainnya">Lainnya</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="form-group">
-                            <label>Amount</label>
-                            <input type="number" name="amount" class="form-control" step="0.01" placeholder="0.00" required>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="form-group">
-                            <label>Qty</label>
-                            <input type="number" name="qty" class="form-control" value="1" required>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="d-none d-md-block">&nbsp;</label>
-                        <button type="submit" class="btn btn-success btn-block">Add Item</button>
+                        <form id="add-item-form" action="{{ route('budgets.items.store', $budget->id) }}" method="POST">
+                            <div class="modal-body">
+                                @csrf
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <label>Description</label>
+                                            <input type="text" name="description" class="form-control" placeholder="e.g. Groceries" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Type</label>
+                                            <select name="type" class="form-control" required>
+                                                <option value="konsumsi">Konsumsi</option>
+                                                <option value="sewa">Sewa</option>
+                                                <option value="pakaian">Pakaian</option>
+                                                <option value="utilitas">Utilitas</option>
+                                                <option value="hiburan">Hiburan</option>
+                                                <option value="lainnya">Lainnya</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label>Amount</label>
+                                            <input type="number" name="amount" class="form-control" step="0.01" placeholder="0.00" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label>Qty</label>
+                                            <input type="number" name="qty" class="form-control" value="1" required>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                <button type="submit" class="btn btn-primary">Add Item</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
+
+@stop
+
+@section('js')
+    <script>
+        document.getElementById('add-item-form').addEventListener('submit', function(e) {
+            const btn = this.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+        });
+    </script>
 @stop

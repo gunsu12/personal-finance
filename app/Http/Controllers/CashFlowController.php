@@ -46,6 +46,7 @@ class CashFlowController extends Controller
     public function store(Request $request)
     {
         $request->validate([
+            'date' => 'required|date',
             'type' => 'required|in:debit,credit',
             'group' => 'required|in:revenue,spending,bonds,others',
             'amount' => 'required|numeric|min:0',
@@ -55,6 +56,7 @@ class CashFlowController extends Controller
 
         \App\Models\CashFlow::create([
             'user_id' => auth()->id(),
+            'created_at' => $request->date,
             'type' => $request->type,
             'group' => $request->group,
             'amount' => $request->amount,
